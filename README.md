@@ -1,4 +1,5 @@
 # The Viterbi Algorithm
+# Written By: Garrett Rodrigues
 
 This repository contains an implementation of the Viterbi Algorithm in python: http://en.wikipedia.org/wiki/Viterbi_algorithm
 
