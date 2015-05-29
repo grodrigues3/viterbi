@@ -12,7 +12,10 @@ Notes:
 import string, pdb
 from time import time 
 from math import log 
+from random import random
 
+DEFAULT_OBSERVATION_FILE = "observations.txt"
+NEW_OBSERVATION_FILE = 'new_obs.txt' #used if generating new observations
 def read_file(fn, delimiter=" ", dim = 1):
     toRet = []
     with open(fn) as f:
@@ -24,18 +27,6 @@ def read_file(fn, delimiter=" ", dim = 1):
                 toRet += [float(word) for word in words if word != "\n"]
     return toRet
 
-fns = ['transitionMatrix', 'observations', 'initialStateDistribution',
-        'emissionMatrix']
-
-for i in range(len(fns)):
-    fns[i] = fns[i] + ".txt"
-
-trans = read_file(fns[0], dim = 2)
-obs = read_file(fns[1])
-init = read_file(fns[2])
-emit = read_file(fns[3], "\t", dim =2)
-states = string.uppercase 
-print "All the parameters have been loaded ..."
 ##################################################################################
 #VITERBI ALGORITHM
 ##################################################################################
@@ -87,7 +78,46 @@ def Viterbi(obs, trans, emit, init, states, debug = False):
     stateInd = state_lookup[finalState]
     return (prob, path[stateInd])
 
+
+##################################################################################
+# GENERATING A NEW SEQUENCE OF OBSERVATIONS
+##################################################################################
+
+def generate_new_obs(input_str, emit, states):
+    total_str_length = 10**5
+    num_obs_per_letter = total_str_length/len(input_str)
+    obs = [0 for jj  in range(len(input_str) * num_obs_per_letter)]
+    c = 0
+    with open(NEW_OBSERVATION_FILE, 'w') as g:
+        for letter in input_str:
+            zero_thresh = emit[states.index(letter)][0]
+            for kk in range(num_obs_per_letter):
+                cur_obs = 0 if random() <= zero_thresh else 1
+                obs[c] = cur_obs
+                g.write(str(cur_obs) +" ")
+                c+=1
+    return obs
+    
 if __name__ == "__main__":
+    
+    fns = ['transitionMatrix.txt', 'new_obs.txt', 'initialStateDistribution.txt',
+            'emissionMatrix.txt']
+    #0. Load the parameter data
+    trans = read_file(fns[0], dim = 2)
+    init = read_file(fns[2])
+    emit = read_file(fns[3], "\t", dim =2)
+    states = string.uppercase 
+
+    # 1. If desired, generate a new text sequence (comment this out to skip it)
+    test_str = 'IntellisisIsACoolPlaceToWork' 
+    new_obs = generate_new_obs(test_str.upper(), emit, states)
+    
+    # 2. Load the obs
+    obs = read_file(DEFAULT_OBSERVATION_FILE) #read_file(NEW_OBSERVATION_FILE)
+    print "All the parameters have been loaded ..."
+
+    # 3. Process the observations to try and recover the original string based only
+    # on the observations
     prob, bestPath = Viterbi(obs, trans, emit, init, states)
     print "The following is the log of the probability is the most likely state sequence."
     print "Note that the true probability can be calculated by e^(log_prob)" 
